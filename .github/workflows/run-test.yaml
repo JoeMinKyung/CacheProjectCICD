@@ -24,8 +24,6 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: 1019
           MYSQL_DATABASE: plus_project
-          MYSQL_USER: root
-          MYSQL_PASSWORD: 1019
         ports:
           - 3307:3307
         options: >-
@@ -53,4 +51,5 @@ jobs:
       # run은 사용자 지정 스크립트 실행
       - name: run unittest
         run: |
+          export SPRING_PROFILES_ACTIVE=test
           ./gradlew clean test
