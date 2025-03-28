@@ -1,0 +1,57 @@
+name: Run Test
+
+on:
+  push:
+    branches: [ develop, feature/* ]
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: 1019
+          MYSQL_DATABASE: plus_project
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      SPRING_PROFILES_ACTIVE: test
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: java setup
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: make executable gradlew
+        run: chmod +x ./gradlew
+
+      - name: Wait for MySQL to be ready
+        run: |
+          for i in {1..30}; do
+            nc -zv localhost 3307 && echo "MySQL is up" && exit 0
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+          echo "MySQL did not start in time" && exit 1
+
+      - name: run unittest
+        run: ./gradlew clean test
+
+      - name: Check MySQL logs
+        run: docker logs $(docker ps -q --filter ancestor=mysql:8)
