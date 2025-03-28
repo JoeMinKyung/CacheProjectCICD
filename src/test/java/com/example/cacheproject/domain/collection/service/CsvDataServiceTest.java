@@ -99,7 +99,7 @@ public class CsvDataServiceTest {
         // Arrange
         List<CsvData> mockCsvData = createMockCsvData(50);
 
-        // Act ㅇ
+        // Act
         csvService.batchInsert(mockCsvData);
 
         // Assert
