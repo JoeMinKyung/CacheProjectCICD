@@ -7,11 +7,13 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.Objects;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor
 @Table(name = "from_openapi")
 @XmlRootElement(name = "row")
