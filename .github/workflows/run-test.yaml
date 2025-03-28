@@ -18,6 +18,22 @@ jobs:
     # 배열로 선언시 개수 만큼 반복해서 실행한다. ( 예제 : 1번 실행)
     runs-on: [ ubuntu-latest ]
 
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: 1019
+          MYSQL_DATABASE: plus_project
+          MYSQL_USER: root
+          MYSQL_PASSWORD: 1019
+        ports:
+          - 3307:3307
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
     # 실제 실행 스크립트
     steps:
       # uses는 github actions에서 제공하는 플러그인을 실행.(git checkout 실행)
