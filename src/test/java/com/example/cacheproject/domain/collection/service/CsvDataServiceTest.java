@@ -94,6 +94,20 @@ public class CsvDataServiceTest {
         });
     }
 
+    @Test
+    public void testBatchInsert() {
+        // Arrange
+        List<CsvData> mockCsvData = createMockCsvData(50);
+
+        // Act
+        csvService.batchInsert(mockCsvData);
+
+        // Assert
+        verify(entityManager, times(50)).persist(any(CsvData.class));
+        verify(entityManager, times(1)).flush();
+        verify(entityManager, times(1)).clear();
+    }
+
     // Helper method to create mock CSV data
     private List<CsvData> createMockCsvData(int count) {
         List<CsvData> mockData = new ArrayList<>();
