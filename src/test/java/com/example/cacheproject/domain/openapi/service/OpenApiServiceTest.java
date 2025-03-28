@@ -5,7 +5,6 @@ import com.example.cacheproject.common.exception.DataIntegrityException;
 import com.example.cacheproject.common.exception.OpenApiException;
 import com.example.cacheproject.common.util.BatchInsertUtil;
 import com.example.cacheproject.common.util.DataConsistencyUtil;
-import com.example.cacheproject.domain.openapi.entity.OpenApi;
 import com.example.cacheproject.domain.openapi.fetchstatus.entity.OpenApiFetchStatus;
 import com.example.cacheproject.domain.openapi.fetchstatus.repository.OpenApiFetchStatusRepository;
 import jakarta.persistence.EntityManager;
@@ -21,8 +20,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,81 +45,69 @@ public class OpenApiServiceTest {
     private OpenApiService openApiService;
 
     @BeforeEach
-    public void 설정() {
+    public void setUp() {
         ReflectionTestUtils.setField(openApiService, "openApiUrl", "http://example.com/api");
     }
 
     @Test
-    public void OpenAPI_데이터_정상_가져오기_및_저장() {
-        // 기존 마지막 가져온 데이터 설정
+    public void testFetchAndSaveOpenApiData_SuccessfulFetch() {
+        // Arrange
         OpenApiFetchStatus mockLastFetchStatus = new OpenApiFetchStatus();
         mockLastFetchStatus.setLastFetchedRow(0);
         when(openApiFetchStatusRepository.findTopByOrderByUpdatedAtDesc()).thenReturn(mockLastFetchStatus);
 
-        // Mock XML 응답 데이터
-        String mockXmlResponse =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
-                        "<ServiceInternetShopInfo>" +
-                        "    <row>" +
-                        "        <id>1</id>" +
-                        "        <name>Test Shop 1</name>" +
-                        "    </row>" +
-                        "    <row>" +
-                        "        <id>2</id>" +
-                        "        <name>Test Shop 2</name>" +
-                        "    </row>" +
-                        "</ServiceInternetShopInfo>";
-
+        // Prepare mock XML response
+        String mockXmlResponse = "<response><rows><row>Test Data 1</row><row>Test Data 2</row></rows></response>";
         ResponseEntity<String> mockResponseEntity = ResponseEntity.ok(mockXmlResponse);
         when(restTemplate.getForEntity(anyString(), eq(String.class))).thenReturn(mockResponseEntity);
 
-        // 데이터 일관성 체크용 Mock 데이터
-        List<OpenApi> mockOpenApiList = new ArrayList<>();
-        OpenApi mockOpenApi1 = new OpenApi();
-        mockOpenApi1.setId(1L);
-        OpenApi mockOpenApi2 = new OpenApi();
-        mockOpenApi2.setId(2L);
-        mockOpenApiList.add(mockOpenApi1);
-        mockOpenApiList.add(mockOpenApi2);
-
+        // Mock data consistency check
         when(dataConsistencyUtil.checkOpenApiDataConsistency(any())).thenReturn(true);
 
+        // Mock batch insert
         try (MockedStatic<BatchInsertUtil> batchInsertUtilMockedStatic = Mockito.mockStatic(BatchInsertUtil.class)) {
-            // 실행
+            // Act
             String result = openApiService.fetchAndSaveOpenApiData();
 
-            // 검증
+            // Assert
             assertTrue(result.contains("개의 OpenAPI 데이터가 성공적으로 삽입되었습니다."));
             verify(openApiFetchStatusRepository, atLeastOnce()).save(any(OpenApiFetchStatus.class));
         }
     }
 
     @Test
-    public void OpenAPI_빈_응답_처리() {
+    public void testFetchAndSaveOpenApiData_EmptyResponse() {
+        // Arrange
         when(openApiFetchStatusRepository.findTopByOrderByUpdatedAtDesc()).thenReturn(null);
+
+        // Prepare empty response
         ResponseEntity<String> mockResponseEntity = ResponseEntity.ok("");
         when(restTemplate.getForEntity(anyString(), eq(String.class))).thenReturn(mockResponseEntity);
 
+        // Act & Assert
         assertThrows(BadRequestException.class, () -> {
             openApiService.fetchAndSaveOpenApiData();
         });
     }
 
     @Test
-    public void OpenAPI_호출_실패_예외_처리() {
+    public void testFetchAndSaveOpenApiData_ApiCallFailed() {
+        // Arrange
         when(openApiFetchStatusRepository.findTopByOrderByUpdatedAtDesc()).thenReturn(null);
         when(restTemplate.getForEntity(anyString(), eq(String.class))).thenThrow(new RuntimeException("API Error"));
 
+        // Act & Assert
         assertThrows(OpenApiException.class, () -> {
             openApiService.fetchAndSaveOpenApiData();
         });
     }
 
     @Test
-    public void OpenAPI_데이터_무결성_검사_실패() {
+    public void testFetchAndSaveOpenApiData_DataIntegrityCheckFailed() {
+        // Arrange
         when(openApiFetchStatusRepository.findTopByOrderByUpdatedAtDesc()).thenReturn(null);
 
-        // Mock XML 응답 데이터
+        // Prepare mock XML response that matches the expected structure
         String mockXmlResponse =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                         "<ServiceInternetShopInfo>" +
@@ -138,8 +123,11 @@ public class OpenApiServiceTest {
 
         ResponseEntity<String> mockResponseEntity = ResponseEntity.ok(mockXmlResponse);
         when(restTemplate.getForEntity(anyString(), eq(String.class))).thenReturn(mockResponseEntity);
+
+        // Mock data consistency check to fail
         when(dataConsistencyUtil.checkOpenApiDataConsistency(any())).thenReturn(false);
 
+        // Act & Assert
         assertThrows(DataIntegrityException.class, () -> {
             try (MockedStatic<BatchInsertUtil> batchInsertUtilMockedStatic = Mockito.mockStatic(BatchInsertUtil.class)) {
                 openApiService.fetchAndSaveOpenApiData();
