@@ -122,7 +122,7 @@ public class OpenApiServiceTest {
     public void OpenAPI_데이터_무결성_검사_실패() {
         when(openApiFetchStatusRepository.findTopByOrderByUpdatedAtDesc()).thenReturn(null);
 
-        // Mock XML 응답 response
+        // Mock XML 응답 데이터
         String mockXmlResponse =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                         "<ServiceInternetShopInfo>" +
