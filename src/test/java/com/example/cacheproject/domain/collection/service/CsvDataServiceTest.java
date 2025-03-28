@@ -50,7 +50,7 @@ public class CsvDataServiceTest {
 
     @Test
     public void testReadCsvAndSaveToDatabaseInBatch_SuccessfulImport() {
-        // Arrange
+        // 범위
         List<CsvData> mockCsvData = createMockCsvData(150);
         when(csvReaderUtil.readCsv(anyString())).thenReturn(mockCsvData);
 
